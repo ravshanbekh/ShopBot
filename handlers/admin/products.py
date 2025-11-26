@@ -1,5 +1,5 @@
 """
-Admin tovar boshqaruvi
+Admin tovar boshqaruvi - Tahrirlash va O'chirish bilan
 """
 
 from aiogram import Router, F
@@ -13,7 +13,8 @@ from keyboars.admin_kb import (
     get_products_list_keyboard,
     get_product_manage_keyboard,
     get_confirm_delete_keyboard,
-    get_admin_main_menu
+    get_admin_main_menu,
+    get_edit_product_keyboard
 )
 from database.json_db import db
 from middlewares.admin_check import AdminFilter
@@ -31,6 +32,13 @@ class AddProduct(StatesGroup):
     description = State()
     size = State()
     photo = State()
+
+
+class EditProduct(StatesGroup):
+    """Tovar tahrirlash holatlari"""
+    product_id = State()
+    field = State()
+    value = State()
 
 
 @router.message(F.text == "➕ Tovar qo'shish")
@@ -280,15 +288,203 @@ async def toggle_availability(callback: CallbackQuery):
     await show_product_detail(callback)
 
 
+# ==================== TAHRIRLASH ====================
+
+@router.callback_query(F.data.startswith("admin_edit:"))
+async def show_edit_menu(callback: CallbackQuery):
+    """Tahrirlash menyusini ko'rsatish"""
+    product_id = int(callback.data.split(":")[1])
+    product = db.get_product(product_id)
+
+    if not product:
+        await callback.answer("❌ Tovar topilmadi", show_alert=True)
+        return
+
+    await callback.message.edit_text(
+        f"✏️ <b>Tovarni tahrirlash</b>\n\n"
+        f"📦 {product['name']}\n\n"
+        "Qaysi maydonni o'zgartirmoqchisiz?",
+        reply_markup=get_edit_product_keyboard(product_id)
+    )
+    await callback.answer()
+
+
+@router.callback_query(F.data.startswith("admin_edit_name:"))
+async def start_edit_name(callback: CallbackQuery, state: FSMContext):
+    """Nom tahrirlash"""
+    product_id = int(callback.data.split(":")[1])
+
+    await state.set_state(EditProduct.value)
+    await state.update_data(product_id=product_id, field="name")
+
+    await callback.message.edit_text(
+        "✏️ <b>Tovar nomini o'zgartirish</b>\n\n"
+        "Yangi nomni kiriting:"
+    )
+    await callback.answer()
+
+
+@router.callback_query(F.data.startswith("admin_edit_price:"))
+async def start_edit_price(callback: CallbackQuery, state: FSMContext):
+    """Narx tahrirlash"""
+    product_id = int(callback.data.split(":")[1])
+
+    await state.set_state(EditProduct.value)
+    await state.update_data(product_id=product_id, field="price")
+
+    await callback.message.edit_text(
+        "✏️ <b>Narxni o'zgartirish</b>\n\n"
+        "Yangi narxni kiriting (faqat raqam):"
+    )
+    await callback.answer()
+
+
+@router.callback_query(F.data.startswith("admin_edit_desc:"))
+async def start_edit_description(callback: CallbackQuery, state: FSMContext):
+    """Tavsif tahrirlash"""
+    product_id = int(callback.data.split(":")[1])
+
+    await state.set_state(EditProduct.value)
+    await state.update_data(product_id=product_id, field="description")
+
+    await callback.message.edit_text(
+        "✏️ <b>Tavsifni o'zgartirish</b>\n\n"
+        "Yangi tavsifni kiriting:"
+    )
+    await callback.answer()
+
+
+@router.callback_query(F.data.startswith("admin_edit_size:"))
+async def start_edit_size(callback: CallbackQuery, state: FSMContext):
+    """O'lcham tahrirlash"""
+    product_id = int(callback.data.split(":")[1])
+
+    await state.set_state(EditProduct.value)
+    await state.update_data(product_id=product_id, field="size")
+
+    await callback.message.edit_text(
+        "✏️ <b>O'lcham/Rangni o'zgartirish</b>\n\n"
+        "Yangi o'lcham/rangni kiriting:"
+    )
+    await callback.answer()
+
+
+@router.callback_query(F.data.startswith("admin_edit_photo:"))
+async def start_edit_photo(callback: CallbackQuery, state: FSMContext):
+    """Rasm tahrirlash"""
+    product_id = int(callback.data.split(":")[1])
+
+    await state.set_state(EditProduct.value)
+    await state.update_data(product_id=product_id, field="photo_id")
+
+    await callback.message.edit_text(
+        "✏️ <b>Rasmni o'zgartirish</b>\n\n"
+        "Yangi rasmni yuboring:"
+    )
+    await callback.answer()
+
+
+@router.callback_query(F.data.startswith("admin_edit_category:"))
+async def start_edit_category(callback: CallbackQuery, state: FSMContext):
+    """Kategoriya tahrirlash"""
+    product_id = int(callback.data.split(":")[1])
+    categories = db.get_categories()
+
+    await state.set_state(EditProduct.value)
+    await state.update_data(product_id=product_id, field="category")
+
+    await callback.message.edit_text(
+        "✏️ <b>Kategoriyani o'zgartirish</b>\n\n"
+        "Yangi kategoriyani tanlang:",
+        reply_markup=get_categories_admin_keyboard(categories, action="select")
+    )
+    await callback.answer()
+
+
+@router.message(EditProduct.value, F.photo)
+async def process_edit_photo(message: Message, state: FSMContext):
+    """Yangi rasmni saqlash"""
+    data = await state.get_data()
+    product_id = data['product_id']
+    photo_id = message.photo[-1].file_id
+
+    db.update_product(product_id, photo_id=photo_id)
+
+    await state.clear()
+    await message.answer(
+        "✅ Rasm yangilandi!",
+        reply_markup=get_admin_main_menu()
+    )
+
+
+@router.message(EditProduct.value)
+async def process_edit_value(message: Message, state: FSMContext):
+    """Yangi qiymatni saqlash"""
+    data = await state.get_data()
+    product_id = data['product_id']
+    field = data['field']
+    value = message.text
+
+    # Narx uchun validatsiya
+    if field == "price":
+        try:
+            value = float(value.replace(",", "").replace(" ", ""))
+            if value <= 0:
+                await message.answer("❌ Narx musbat son bo'lishi kerak:")
+                return
+        except ValueError:
+            await message.answer("❌ Noto'g'ri format! Faqat raqam kiriting:")
+            return
+
+    # Yangilash
+    db.update_product(product_id, **{field: value})
+
+    await state.clear()
+
+    field_names = {
+        'name': 'Nom',
+        'price': 'Narx',
+        'description': 'Tavsif',
+        'size': 'O\'lcham/Rang',
+        'category': 'Kategoriya'
+    }
+
+    await message.answer(
+        f"✅ {field_names.get(field, 'Maydon')} yangilandi!",
+        reply_markup=get_admin_main_menu()
+    )
+
+
+@router.callback_query(EditProduct.value, F.data.startswith("admin_category:"))
+async def process_edit_category_select(callback: CallbackQuery, state: FSMContext):
+    """Kategoriyani tanlash (tahrirlash)"""
+    category = callback.data.split(":", 1)[1]
+    data = await state.get_data()
+    product_id = data['product_id']
+
+    db.update_product(product_id, category=category)
+
+    await state.clear()
+    await callback.message.edit_text("✅ Kategoriya yangilandi!")
+    await callback.answer()
+
+
+# ==================== O'CHIRISH ====================
+
 @router.callback_query(F.data.startswith("admin_delete:"))
 async def confirm_delete_product(callback: CallbackQuery):
     """O'chirishni tasdiqlash"""
     product_id = int(callback.data.split(":")[1])
     product = db.get_product(product_id)
 
+    if not product:
+        await callback.answer("❌ Tovar topilmadi", show_alert=True)
+        return
+
     await callback.message.edit_text(
         f"⚠️ <b>O'chirish tasdigi</b>\n\n"
-        f"Haqiqatan ham \"{product['name']}\" tovarini o'chirmoqchimisiz?",
+        f"Haqiqatan ham \"{product['name']}\" tovarini o'chirmoqchimisiz?\n\n"
+        f"Bu amalni qaytarib bo'lmaydi!",
         reply_markup=get_confirm_delete_keyboard(product_id)
     )
     await callback.answer()
@@ -298,18 +494,16 @@ async def confirm_delete_product(callback: CallbackQuery):
 async def delete_product(callback: CallbackQuery):
     """Tovarni o'chirish"""
     product_id = int(callback.data.split(":")[1])
+    product = db.get_product(product_id)
+    product_name = product['name'] if product else "Noma'lum"
+
     db.delete_product(product_id)
 
-    await callback.message.edit_text(config.MESSAGES['product_deleted'])
-    await callback.answer("🗑 O'chirildi", show_alert=True)
-
-    # Ro'yxatga qaytish
-    products = db.get_all_products()
-    await callback.bot.send_message(
-        chat_id=callback.message.chat.id,
-        text=f"📋 Jami tovarlar: {len(products)}\n\nTovarni tanlang:",
-        reply_markup=get_products_list_keyboard(products)
+    await callback.message.edit_text(
+        f"{config.MESSAGES['product_deleted']}\n\n"
+        f"📦 {product_name}"
     )
+    await callback.answer("🗑 O'chirildi", show_alert=True)
 
 
 @router.callback_query(F.data == "admin_products_list")

@@ -54,11 +54,11 @@ async def post_random_products(bot: Bot):
 
                 caption += f"\n✅ Buyurtma berish uchun botga o'ting: @{bot_username}"
 
-                # Inline klaviatura yaratish
+                # Inline klaviatura yaratish - DEEP LINK
                 keyboard = InlineKeyboardMarkup(inline_keyboard=[
                     [InlineKeyboardButton(
                         text="🛒 Buyurtma berish",
-                        url=f"https://t.me/{bot_username}?start=product_{product['id']}"
+                        url=f"https://t.me/{bot_username}?start=order_{product['id']}"
                     )]
                 ])
 
@@ -84,8 +84,8 @@ async def post_random_products(bot: Bot):
                     except Exception as e:
                         logger.error(f"[{datetime.now()}] ❌ Kanalga yuborishda xatolik: {e}")
 
-                # Guruhga yuborish (agar kanal ID dan farq qilsa)
-                if config.GROUP_ID and config.GROUP_ID != config.CHANNEL_ID:
+                # Guruhga yuborish
+                if hasattr(config, 'GROUP_ID') and config.GROUP_ID and config.GROUP_ID != config.CHANNEL_ID:
                     try:
                         if product.get('photo_id'):
                             await bot.send_photo(
@@ -109,8 +109,7 @@ async def post_random_products(bot: Bot):
             except Exception as e:
                 logger.error(f"[{datetime.now()}] ❌ Tovar post qilishda xatolik: {e}")
 
-        logger.info(
-            f"[{datetime.now()}] ✅ Avtomatik post muvaffaqiyatli yakunlandi! {len(products)} ta tovar yuborildi")
+        logger.info(f"[{datetime.now()}] ✅ Avtomatik post muvaffaqiyatli yakunlandi! {len(products)} ta tovar yuborildi")
 
     except Exception as e:
         logger.error(f"[{datetime.now()}] ❌ Scheduler xatolik: {e}")
@@ -160,16 +159,3 @@ def setup_scheduler(bot: Bot) -> AsyncIOScheduler:
     logger.info("=" * 50)
 
     return scheduler
-
-
-async def manual_post_products(bot: Bot, count: int = 1):
-    """
-    Qo'lda tovar post qilish (test uchun)
-
-    Args:
-        bot: Bot obyekti
-        count: Post qilinadigan tovarlar soni
-    """
-    logger.info(f"🔧 Qo'lda post boshlandi: {count} ta tovar")
-    await post_random_products(bot)
-    logger.info("✅ Qo'lda post yakunlandi")
