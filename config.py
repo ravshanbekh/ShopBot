@@ -39,10 +39,19 @@ DAILY_POSTS_COUNT = 3
 
 # FAQ javoblari
 FAQ_ANSWERS = {
-    "yetkazish": "🚚 Yetkazib berish Toshkent bo'ylab - 15,000 so'm\n🌍 Viloyatlarga - 25,000 so'm\n⏱ Yetkazish muddati: 1-3 kun",
-    "tolov": "💳 To'lov turlari:\n• Naqd pul\n• Plastik karta\n• Payme\n• Click\n• Uzum",
-    "qaytarish": "🔄 Tovarni qaytarish:\n• 14 kun ichida\n• Tovar ishlatilmagan bo'lishi kerak\n• Chek mavjud bo'lishi shart",
-    "aloqa": "📞 Biz bilan bog'lanish:\n📱 Telefon: +998 90 123 45 67\n📧 Email: info@shop.uz\n⏰ Ish vaqti: 9:00 - 21:00"
+    "yetkazish": """🚚 Siz ikki usulni tanlashingiz mumkin:
+
+Avto yetkazib berish: 20–25 ish kuni ichida yetkaziladi. Narxi kilosiga 6 USD (72 000 so‘m).
+
+Avia yetkazib berish: 7–10 ish kuni ichida yetkaziladi. Narxi kilosiga 9 USD (108 000 so‘m).
+
+Gulistonga kelgan mahsulotni BTS orqali boshqa viloyatlarga 2–3 ish kuni ichida jo‘natish mumkin. Narxi alohida belgilanadi (bog‘lanib so‘rashingiz mumkin).""",
+
+    "tolov": "To‘lov faqat onlayn karta orqali amalga oshiriladi.",
+    "aloqa": """📞 Biz bilan bog'lanish:
+📱 Telefon: +998 94 721 00 78
+🌐 Telegram: @BFF_007
+⏰ Ish vaqti: 9:00 - 18:00"""
 }
 
 # Xabarlar

@@ -1,19 +1,17 @@
 """
-Buyurtma berish handleri - To'liq versiya
+Buyurtma berish handleri - O'lcham/Rang va To'lov bilan
 """
 
 from aiogram import Router, F
 from aiogram.types import Message, CallbackQuery
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup
-import re
 
 import config
 from keyboars.user_kb import (
     get_cancel_keyboard,
     get_phone_keyboard,
-    get_main_menu,
-    get_order_confirm_keyboard
+    get_main_menu
 )
 from database.json_db import db
 
@@ -25,7 +23,9 @@ class OrderForm(StatesGroup):
     waiting_for_name = State()
     waiting_for_phone = State()
     waiting_for_address = State()
+    waiting_for_size = State()  # O'lcham/Rang
     waiting_for_quantity = State()
+    waiting_for_payment = State()  # To'lov cheki
 
 
 @router.callback_query(F.data.startswith("order:"))
@@ -197,18 +197,6 @@ async def process_phone(message: Message, state: FSMContext):
         )
         return
 
-    # Operator kodini tekshirish (90, 91, 93, 94, 95, 97, 98, 99, 33, 88)
-    operator_code = digits[3:5]
-    valid_codes = ['90', '91', '93', '94', '95', '97', '98', '99', '33', '88']
-
-    if operator_code not in valid_codes:
-        await message.answer(
-            "⚠️ Operator kodi noto'g'ri ko'rinadi.\n\n"
-            "To'g'ri operator kodlari:\n"
-            "90, 91, 93, 94, 95, 97, 98, 99, 33, 88\n\n"
-            "Davom ettirasizmi? (Ha/Yo'q)"
-        )
-
     # Holatga saqlash
     await state.update_data(phone=phone)
     await state.set_state(OrderForm.waiting_for_address)
@@ -264,12 +252,47 @@ async def process_address(message: Message, state: FSMContext):
 
     # Holatga saqlash
     await state.update_data(address=address)
+    await state.set_state(OrderForm.waiting_for_size)
+
+    # O'lcham/Rang so'rash
+    await message.answer(
+        f"✅ Manzil qabul qilindi\n\n"
+        "4️⃣ <b>O'lcham yoki Rangni</b> kiriting:\n\n"
+        "Masalan: L, XL, 42, Qora, Oq va h.k.\n\n"
+        "Agar o'lcham/rang kerak bo'lmasa, <b>\"-\"</b> belgisini yuboring",
+        reply_markup=get_cancel_keyboard()
+    )
+
+
+@router.message(OrderForm.waiting_for_size, F.text == "❌ Bekor qilish")
+async def cancel_order_size(message: Message, state: FSMContext):
+    """O'lcham kiritishda bekor qilish"""
+    await state.clear()
+    await message.answer(
+        config.MESSAGES['order_cancel'],
+        reply_markup=get_main_menu()
+    )
+
+
+@router.message(OrderForm.waiting_for_size)
+async def process_size(message: Message, state: FSMContext):
+    """
+    O'lcham/Rangni qabul qilish
+    """
+    size = message.text.strip()
+
+    # "-" bo'lsa, o'tkazib yuborish
+    if size == "-":
+        size = None
+
+    # Holatga saqlash
+    await state.update_data(product_size=size)
     await state.set_state(OrderForm.waiting_for_quantity)
 
     # Miqdor so'rash
     await message.answer(
-        f"✅ Manzil qabul qilindi\n\n"
-        "4️⃣ <b>Miqdorni</b> kiriting:\n\n"
+        f"✅ O'lcham/Rang qabul qilindi\n\n"
+        "5️⃣ <b>Miqdorni</b> kiriting:\n\n"
         "Nechta buyurtma qilmoqchisiz? (1 dan 100 gacha)\n\n"
         "Faqat raqam kiriting, masalan: 1 yoki 5",
         reply_markup=get_cancel_keyboard()
@@ -289,7 +312,7 @@ async def cancel_order_quantity(message: Message, state: FSMContext):
 @router.message(OrderForm.waiting_for_quantity)
 async def process_quantity(message: Message, state: FSMContext):
     """
-    Miqdorni qabul qilish va buyurtmani yakunlash
+    Miqdorni qabul qilish va to'lov so'rash
     """
     # Raqamga o'girish
     try:
@@ -321,9 +344,7 @@ async def process_quantity(message: Message, state: FSMContext):
     # Barcha ma'lumotlarni olish
     data = await state.get_data()
     product_id = data['product_id']
-    customer_name = data['customer_name']
-    phone = data['phone']
-    address = data['address']
+    product_size = data.get('product_size')
 
     # Tovar ma'lumotlarini olish
     product = db.get_product(product_id)
@@ -334,6 +355,93 @@ async def process_quantity(message: Message, state: FSMContext):
             "Iltimos, qaytadan urinib ko'ring.",
             reply_markup=get_main_menu()
         )
+        await state.clear()
+        return
+
+    # Umumiy narxni hisoblash
+    total_price = product['price'] * quantity
+
+    # Holatga saqlash
+    await state.update_data(quantity=quantity, total_price=total_price)
+    await state.set_state(OrderForm.waiting_for_payment)
+
+    # To'lov ma'lumotlari
+    payment_text = f"""
+💳 <b>TO'LOV QILISH</b>
+
+━━━━━━━━━━━━━━━━━━━━
+
+📦 <b>Tovar:</b> {product['name']}
+🔢 <b>Miqdor:</b> {quantity} dona
+💰 <b>Narx:</b> {product['price']:,.0f} so'm"""
+
+    if product_size:
+        payment_text += f"\n📏 <b>O'lcham/Rang:</b> {product_size}"
+
+    payment_text += f"""
+
+💵 <b>JAMI TO'LOV:</b> {total_price:,.0f} so'm
+
+━━━━━━━━━━━━━━━━━━━━
+
+💳 <b>KARTA RAQAMI:</b>
+<code>9860 1201 6327 9884</code>
+
+👤 <b>Karta egasi:</b>
+FARRUX BORIBOYEV
+
+━━━━━━━━━━━━━━━━━━━━
+
+📝 <b>QO'LLANMA:</b>
+
+1️⃣ Yuqoridagi karta raqamiga <b>{total_price:,.0f} so'm</b> o'tkazing
+2️⃣ To'lov chekini surat qiling (screenshot)
+3️⃣ Surat ni bu yerga yuboring
+
+⚠️ <b>DIQQAT:</b> To'lov chekini yubormaguningizcha buyurtma tasdiqlanmaydi!
+
+❌ Bekor qilish uchun "Bekor qilish" tugmasini bosing
+    """
+
+    await message.answer(
+        payment_text,
+        reply_markup=get_cancel_keyboard()
+    )
+
+
+@router.message(OrderForm.waiting_for_payment, F.text == "❌ Bekor qilish")
+async def cancel_order_payment(message: Message, state: FSMContext):
+    """To'lovda bekor qilish"""
+    await state.clear()
+    await message.answer(
+        config.MESSAGES['order_cancel'],
+        reply_markup=get_main_menu()
+    )
+
+
+@router.message(OrderForm.waiting_for_payment, F.photo)
+async def process_payment_check(message: Message, state: FSMContext):
+    """
+    To'lov chekini qabul qilish va buyurtmani yaratish
+    """
+    # Barcha ma'lumotlarni olish
+    data = await state.get_data()
+    product_id = data['product_id']
+    customer_name = data['customer_name']
+    phone = data['phone']
+    address = data['address']
+    product_size = data.get('product_size')
+    quantity = data['quantity']
+    total_price = data['total_price']
+
+    # To'lov cheki foto ID
+    payment_photo_id = message.photo[-1].file_id
+
+    # Tovar ma'lumotlarini olish
+    product = db.get_product(product_id)
+
+    if not product:
+        await message.answer("❌ Tovar topilmadi", reply_markup=get_main_menu())
         await state.clear()
         return
 
@@ -348,123 +456,83 @@ async def process_quantity(message: Message, state: FSMContext):
         quantity=quantity
     )
 
-    # Umumiy narxni hisoblash
-    total_price = product['price'] * quantity
+    # Mijozga tasdiqlash
+    await message.answer(
+        "✅ <b>To'lov cheki qabul qilindi!</b>\n\n"
+        f"📋 Buyurtma raqami: <code>{order['order_number']}</code>\n\n"
+        "Buyurtmangiz adminga yuborildi va tekshirilmoqda.\n"
+        "To'lov tasdiqlanganidan keyin operator siz bilan bog'lanadi.\n\n"
+        "📊 Status: <b>To'lov tekshirilmoqda</b>",
+        reply_markup=get_main_menu()
+    )
 
-    # Buyurtma ma'lumotlarini ko'rsatish
-    order_text = f"""
-✅ <b>Buyurtma ma'lumotlarini tasdiqlang</b>
+    # Adminlarga xabar
+    admin_text = f"""
+🆕 <b>YANGI BUYURTMA! (TO'LOV CHEKI BILAN)</b>
 
 ━━━━━━━━━━━━━━━━━━━━
+
+📋 <b>Buyurtma:</b> <code>{order['order_number']}</code>
 
 📦 <b>TOVAR:</b>
-{product['name']}
-💰 Narxi: {product['price']:,.0f} so'm
-🔢 Miqdor: {quantity} dona
-💵 <b>JAMI:</b> {total_price:,.0f} so'm
+• Nomi: {product['name']}
+• Kategoriya: {product['category']}
+• Narxi: {product['price']:,.0f} so'm
+• Miqdor: {quantity} dona"""
+
+    if product_size:
+        admin_text += f"\n• O'lcham/Rang: {product_size}"
+
+    admin_text += f"""
+• <b>JAMI: {total_price:,.0f} so'm</b>
 
 ━━━━━━━━━━━━━━━━━━━━
 
-👤 <b>MIJOZ MA'LUMOTLARI:</b>
+👤 <b>MIJOZ:</b>
 • Ism: {customer_name}
 • Telefon: {phone}
 • Manzil: {address}
 
 ━━━━━━━━━━━━━━━━━━━━
 
-Ma'lumotlar to'g'rimi?
+🆔 User ID: <code>{message.from_user.id}</code>
+👤 Username: @{message.from_user.username or 'yoq'}
+
+⚠️ <b>TO'LOV CHEKI YUBORILDI!</b>
+To'lovni tekshiring va buyurtmani tasdiqlang!
     """
 
-    await message.answer(
-        order_text,
-        reply_markup=get_order_confirm_keyboard(order['id'])
-    )
-
-    # Holatni tozalash
-    await state.clear()
-
-
-@router.callback_query(F.data.startswith("confirm_order:"))
-async def confirm_order(callback: CallbackQuery):
-    """
-    Buyurtmani tasdiqlash va adminlarga yuborish
-    """
-    order_id = int(callback.data.split(":")[1])
-    order = db.get_order(order_id)
-
-    if not order:
-        await callback.answer("❌ Buyurtma topilmadi", show_alert=True)
-        return
-
-    product = db.get_product(order['product_id'])
-    total_price = product['price'] * order['quantity']
-
-    # Adminlarga xabar tayyorlash
-    admin_text = f"""
-🆕 <b>YANGI BUYURTMA!</b>
-
-━━━━━━━━━━━━━━━━━━━━
-
-📋 <b>Buyurtma raqami:</b> <code>{order['order_number']}</code>
-
-📦 <b>TOVAR:</b>
-• Nomi: {product['name']}
-• Kategoriya: {product['category']}
-• Narxi: {product['price']:,.0f} so'm
-• Miqdor: {order['quantity']} dona
-• <b>JAMI: {total_price:,.0f} so'm</b>
-
-━━━━━━━━━━━━━━━━━━━━
-
-👤 <b>MIJOZ:</b>
-• Ism: {order['customer_name']}
-• Telefon: {order['phone']}
-• Manzil: {order['address']}
-
-━━━━━━━━━━━━━━━━━━━━
-
-🆔 User ID: <code>{order['user_id']}</code>
-👤 Username: @{order['username']}
-📅 Sana: {order['created_at']}
-
-━━━━━━━━━━━━━━━━━━━━
-
-⚡️ Tezroq javob bering!
-    """
-
-    # Har bir adminga yuborish
+    # Har bir adminga tovar va to'lov chekini yuborish
     for admin_id in config.ADMINS:
         try:
+            # Avval tovar rasmini yuborish
             if product.get('photo_id'):
-                await callback.bot.send_photo(
+                await message.bot.send_photo(
                     chat_id=admin_id,
                     photo=product['photo_id'],
-                    caption=admin_text
+                    caption=f"📦 <b>Buyurtma tovari:</b> {product['name']}"
                 )
-            else:
-                await callback.bot.send_message(
-                    chat_id=admin_id,
-                    text=admin_text
-                )
+
+            # Keyin to'lov chekini yuborish
+            await message.bot.send_photo(
+                chat_id=admin_id,
+                photo=payment_photo_id,
+                caption=admin_text
+            )
         except Exception as e:
             print(f"Adminga xabar yuborishda xatolik ({admin_id}): {e}")
 
-    # Mijozga tasdiqlash xabari
-    await callback.message.edit_text(
-        f"{config.MESSAGES['order_success']}\n\n"
-        f"📋 <b>Buyurtma raqami:</b> <code>{order['order_number']}</code>\n\n"
-        f"Buyurtmangiz qabul qilindi va tez orada operatorimiz siz bilan bog'lanadi.\n\n"
-        f"📦 Buyurtma holati: <b>Yangi</b>\n"
-        f"📅 Sana: {order['created_at']}\n\n"
-        f"Buyurtmalar tarixini ko'rish: /start → Mening buyurtmalarim",
-        reply_markup=None
-    )
+    await state.clear()
 
-    await callback.message.answer(
-        "Asosiy menyu:",
-        reply_markup=get_main_menu()
+
+@router.message(OrderForm.waiting_for_payment)
+async def payment_invalid(message: Message):
+    """To'lov cheki bo'lmagan xabar"""
+    await message.answer(
+        "❌ To'lov cheki (screenshot) yuborilmadi!\n\n"
+        "Iltimos, to'lovni amalga oshiring va chekni surat qilib yuboring.\n\n"
+        "📷 Surat (screenshot) yuborish kerak!"
     )
-    await callback.answer("✅ Buyurtma tasdiqlandi!", show_alert=True)
 
 
 @router.callback_query(F.data == "cancel_order")

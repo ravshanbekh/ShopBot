@@ -1,0 +1,13 @@
+[
+  {
+    "id": 1,
+    "category": "🎮 O'yinchoqlar",
+    "name": "Kubik Rubik",
+    "description": null,
+    "price": 70000.0,
+    "size": null,
+    "photo_id": "AgACAgIAAxkBAAICUGkn9cdhXL-ulFzEE6CTfkbPUtl9AAJhC2sbbLBBSWX76S4CT8KHAQADAgADeQADNgQ",
+    "is_available": true,
+    "created_at": "2025-11-27 11:55:04"
+  }
+]

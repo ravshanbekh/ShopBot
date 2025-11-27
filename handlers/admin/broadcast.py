@@ -3,7 +3,7 @@ Admin - Barcha foydalanuvchilarga xabar yuborish
 """
 
 from aiogram import Router, F
-from aiogram.types import Message, CallbackQuery
+from aiogram.types import Message
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup
 import asyncio
@@ -14,7 +14,6 @@ from middlewares.admin_check import AdminFilter
 
 router = Router()
 router.message.filter(AdminFilter())
-router.callback_query.filter(AdminFilter())
 
 
 class BroadcastState(StatesGroup):
@@ -33,22 +32,33 @@ async def start_broadcast(message: Message, state: FSMContext):
         f"📢 <b>Xabar yuborish</b>\n\n"
         f"👥 Foydalanuvchilar: {users_count}\n\n"
         "Barcha foydalanuvchilarga yubormoqchi bo'lgan xabaringizni yuboring:\n\n"
-        "❌ Bekor qilish uchun /cancel yuboring"
+        "• Matn\n"
+        "• Rasm + matn\n"
+        "• Video\n"
+        "• va boshqalar\n\n"
+        "❌ Bekor qilish: /cancel"
+    )
+
+
+@router.message(BroadcastState.waiting_for_message, F.text == "/cancel")
+async def cancel_broadcast(message: Message, state: FSMContext):
+    """Bekor qilish"""
+    await state.clear()
+    await message.answer(
+        "❌ Xabar yuborish bekor qilindi",
+        reply_markup=get_admin_main_menu()
     )
 
 
 @router.message(BroadcastState.waiting_for_message)
 async def process_broadcast(message: Message, state: FSMContext):
-    """Xabarni yuborish"""
-    if message.text == "/cancel":
-        await state.clear()
-        await message.answer(
-            "❌ Bekor qilindi",
-            reply_markup=get_admin_main_menu()
-        )
-        return
-
+    """Xabarni barcha userlarga yuborish"""
     users = db.get_all_users()
+
+    if not users:
+        await message.answer("❌ Foydalanuvchilar yo'q")
+        await state.clear()
+        return
 
     # Yuborish jarayonini boshlash
     status_msg = await message.answer(
@@ -63,19 +73,22 @@ async def process_broadcast(message: Message, state: FSMContext):
 
     for i, user in enumerate(users):
         try:
-            # Xabarni nusxalash
+            # Xabarni nusxalash (copy_to)
             await message.copy_to(user['user_id'])
             success_count += 1
 
             # Har 10 ta foydalanuvchidan keyin statusni yangilash
-            if (i + 1) % 10 == 0:
-                await status_msg.edit_text(
-                    f"📤 Xabar yuborilmoqda...\n\n"
-                    f"Jami: {len(users)}\n"
-                    f"Yuborildi: {success_count}\n"
-                    f"Xatolik: {error_count}\n"
-                    f"Jarayon: {((i + 1) / len(users) * 100):.1f}%"
-                )
+            if (i + 1) % 10 == 0 or (i + 1) == len(users):
+                try:
+                    await status_msg.edit_text(
+                        f"📤 Xabar yuborilmoqda...\n\n"
+                        f"Jami: {len(users)}\n"
+                        f"Yuborildi: {success_count}\n"
+                        f"Xatolik: {error_count}\n"
+                        f"Jarayon: {((i+1)/len(users)*100):.1f}%"
+                    )
+                except:
+                    pass
 
             # Telegram limitlarini hurmat qilish
             await asyncio.sleep(0.05)  # 50ms kutish
@@ -86,13 +99,17 @@ async def process_broadcast(message: Message, state: FSMContext):
 
     # Yakuniy natija
     await state.clear()
-    await status_msg.edit_text(
-        f"✅ <b>Xabar yuborish yakunlandi!</b>\n\n"
-        f"📊 Natijalar:\n"
-        f"• Jami foydalanuvchilar: {len(users)}\n"
-        f"• ✅ Muvaffaqiyatli: {success_count}\n"
-        f"• ❌ Xatolik: {error_count}"
-    )
+
+    try:
+        await status_msg.edit_text(
+            f"✅ <b>Xabar yuborish yakunlandi!</b>\n\n"
+            f"📊 Natijalar:\n"
+            f"• Jami foydalanuvchilar: {len(users)}\n"
+            f"• ✅ Muvaffaqiyatli: {success_count}\n"
+            f"• ❌ Xatolik: {error_count}"
+        )
+    except:
+        pass
 
     await message.answer(
         "Asosiy menyu:",

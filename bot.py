@@ -85,6 +85,7 @@ async def main():
     dp.include_router(panel.router)
     dp.include_router(products.router)
     dp.include_router(categories.router)
+    dp.include_router(broadcast.router)
 
     # Startup va shutdown handlerlar
     dp.startup.register(on_startup)

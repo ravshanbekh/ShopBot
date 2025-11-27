@@ -199,12 +199,6 @@ def get_faq_keyboard() -> InlineKeyboardMarkup:
     )
     builder.row(
         InlineKeyboardButton(
-            text="🔄 Qaytarish",
-            callback_data="faq:qaytarish"
-        )
-    )
-    builder.row(
-        InlineKeyboardButton(
             text="📞 Aloqa",
             callback_data="faq:aloqa"
         )

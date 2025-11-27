@@ -120,7 +120,6 @@ async def faq_answer(callback: CallbackQuery):
     faq_titles = {
         'yetkazish': '🚚 Yetkazib berish',
         'tolov': '💳 Tolov',
-        'qaytarish': '🔄 Qaytarish',
         'aloqa': '📞 Aloqa'
     }
 
