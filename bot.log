@@ -1,0 +1,49 @@
+2025-11-29 12:00:41,359 - utils.schedular - INFO - ==================================================
+2025-11-29 12:00:41,359 - utils.schedular - INFO - 📅 SCHEDULER SOZLANMOQDA...
+2025-11-29 12:00:41,360 - utils.schedular - INFO - ==================================================
+2025-11-29 12:00:41,360 - apscheduler.scheduler - INFO - Adding job tentatively -- it will be properly scheduled when the scheduler starts
+2025-11-29 12:00:41,360 - utils.schedular - INFO - ✅ Scheduler qo'shildi: 11:00 (har kuni)
+2025-11-29 12:00:41,360 - apscheduler.scheduler - INFO - Adding job tentatively -- it will be properly scheduled when the scheduler starts
+2025-11-29 12:00:41,360 - utils.schedular - INFO - ✅ Scheduler qo'shildi: 15:00 (har kuni)
+2025-11-29 12:00:41,360 - apscheduler.scheduler - INFO - Adding job tentatively -- it will be properly scheduled when the scheduler starts
+2025-11-29 12:00:41,361 - utils.schedular - INFO - ✅ Scheduler qo'shildi: 20:00 (har kuni)
+2025-11-29 12:00:41,361 - utils.schedular - INFO - ==================================================
+2025-11-29 12:00:41,361 - utils.schedular - INFO - 📊 Jami 3 ta avtomatik post sozlandi
+2025-11-29 12:00:41,361 - utils.schedular - INFO - 📦 Har bir post: 3 ta random tovar
+2025-11-29 12:00:41,361 - utils.schedular - INFO - ==================================================
+2025-11-29 12:00:41,361 - apscheduler.scheduler - INFO - Added job "Avtomatik post - 11:00" to job store "default"
+2025-11-29 12:00:41,361 - apscheduler.scheduler - INFO - Added job "Avtomatik post - 15:00" to job store "default"
+2025-11-29 12:00:41,362 - apscheduler.scheduler - INFO - Added job "Avtomatik post - 20:00" to job store "default"
+2025-11-29 12:00:41,362 - apscheduler.scheduler - INFO - Scheduler started
+2025-11-29 12:00:41,362 - __main__ - INFO - Scheduler ishga tushdi
+2025-11-29 12:00:41,362 - __main__ - INFO - Polling boshlandi...
+2025-11-29 12:00:41,362 - __main__ - INFO - Bot ishga tushmoqda...
+2025-11-29 12:00:42,202 - __main__ - ERROR - Adminga xabar yuborishda xatolik: Telegram server says - Bad Request: chat not found
+2025-11-29 12:00:42,202 - __main__ - INFO - Bot muvaffaqiyatli ishga tushdi!
+2025-11-29 12:00:42,202 - aiogram.dispatcher - INFO - Start polling
+2025-11-29 12:00:42,312 - aiogram.dispatcher - INFO - Run polling for bot @r9_toq_bot id=8281565704 - 'R9Bot'
+2025-11-29 12:00:56,858 - aiogram.event - INFO - Update id=291028662 is handled. Duration 437 ms by bot id=8281565704
+2025-11-29 12:00:58,960 - aiogram.event - INFO - Update id=291028663 is handled. Duration 172 ms by bot id=8281565704
+2025-11-29 12:01:04,412 - aiogram.event - INFO - Update id=291028664 is handled. Duration 297 ms by bot id=8281565704
+2025-11-29 12:01:06,136 - aiogram.event - INFO - Update id=291028665 is handled. Duration 202 ms by bot id=8281565704
+2025-11-29 12:01:08,110 - aiogram.event - INFO - Update id=291028666 is handled. Duration 437 ms by bot id=8281565704
+2025-11-29 12:01:10,261 - aiogram.event - INFO - Update id=291028667 is handled. Duration 140 ms by bot id=8281565704
+2025-11-29 12:01:13,047 - aiogram.event - INFO - Update id=291028668 is handled. Duration 218 ms by bot id=8281565704
+2025-11-29 12:01:16,790 - aiogram.event - INFO - Update id=291028669 is handled. Duration 282 ms by bot id=8281565704
+2025-11-29 12:01:18,756 - aiogram.event - INFO - Update id=291028670 is handled. Duration 233 ms by bot id=8281565704
+2025-11-29 12:01:20,814 - database.json_db - INFO - ✅ Tovar qo'shildi: wdsd (ID: 1)
+2025-11-29 12:01:21,014 - aiogram.event - INFO - Update id=291028671 is handled. Duration 202 ms by bot id=8281565704
+2025-11-29 12:01:25,399 - aiogram.event - INFO - Update id=291028672 is handled. Duration 202 ms by bot id=8281565704
+2025-11-29 12:01:27,542 - aiogram.event - INFO - Update id=291028673 is handled. Duration 202 ms by bot id=8281565704
+2025-11-29 12:01:29,509 - aiogram.event - INFO - Update id=291028674 is handled. Duration 545 ms by bot id=8281565704
+2025-11-29 12:01:30,596 - aiogram.event - INFO - Update id=291028675 is handled. Duration 265 ms by bot id=8281565704
+2025-11-29 12:01:34,137 - aiogram.event - INFO - Update id=291028676 is handled. Duration 515 ms by bot id=8281565704
+2025-11-29 12:01:35,568 - database.json_db - INFO - ✅ Tovar o'chirildi: ID 1
+2025-11-29 12:01:36,267 - aiogram.event - INFO - Update id=291028677 is handled. Duration 702 ms by bot id=8281565704
+2025-11-29 12:01:40,720 - aiogram.dispatcher - INFO - Polling stopped for bot @r9_toq_bot id=8281565704 - 'R9Bot'
+2025-11-29 12:01:40,720 - aiogram.dispatcher - INFO - Polling stopped
+2025-11-29 12:01:40,720 - __main__ - INFO - Bot to'xtatilmoqda...
+2025-11-29 12:01:41,042 - __main__ - ERROR - Adminga xabar yuborishda xatolik: Telegram server says - Bad Request: chat not found
+2025-11-29 12:01:41,042 - __main__ - INFO - Bot to'xtatildi
+2025-11-29 12:01:41,295 - apscheduler.scheduler - INFO - Scheduler has been shut down
+2025-11-29 12:01:41,296 - __main__ - INFO - Bot to'xtatildi (KeyboardInterrupt)
