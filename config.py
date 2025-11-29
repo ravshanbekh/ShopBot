@@ -17,7 +17,7 @@ ADMINS = [
 ]
 
 # Kanal va guruh ID'lari
-CHANNEL_ID = -1003371130387  # @yourchannel
+CHANNEL_ID = -1003196603414  # @yourchannel
 GROUP_ID = -5045327244    # Guruh ID
 
 # JSON fayllar yo'llari
